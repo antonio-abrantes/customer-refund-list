@@ -3,10 +3,51 @@ import toast, { Toaster } from "react-hot-toast";
 
 import { AuthContext } from "../context/AuthContext";
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getFirstName(fullName: string) {
+  if (!fullName) return "";
+
+  const firstName = fullName.split(" ")[0];
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+}
+
+function calcularRestituicao(client: Client) {
+  const totalAmount = parseFloat(client.total_amount).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+  const finalAmount = parseFloat(client.final_amount).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+
+  const discountAmount = client.discount_amount
+    ? parseFloat(client.discount_amount).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      })
+    : null;
+  const quantity = client.quantity;
+
+  if (discountAmount) {
+    return `Valor a restituir: *${finalAmount}*, na sua compra você obteve um desconto de *${discountAmount}* referente a compra de *${quantity}* ${
+      quantity > 1 ? "cotas" : "cota"
+    }.`;
+  } else {
+    return `Valor a restituir: *${totalAmount}*, referente a compra de *${quantity}* ${
+      quantity > 1 ? "cotas" : "cota"
+    }.`;
+  }
+}
+
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
 const apiKey = import.meta.env.VITE_API_KEY;
 const botName = import.meta.env.VITE_BOT_NAME;
-const phoneTest = import.meta.env.VITE_PHONE_FOR_TEST;
+// const phoneTest = import.meta.env.VITE_PHONE_FOR_TEST;
 
 type ClientStatus = "paid" | "pending" | "cancelled" | "refunded";
 
@@ -16,7 +57,7 @@ interface Client {
   fullname: string;
   phone: string;
   cpf: string;
-  quantity: string;
+  quantity: number;
   total_amount: string;
   discount_amount: string;
   final_amount: string;
@@ -60,14 +101,14 @@ async function updateClientStatus(client: Client, newStatus: ClientStatus) {
   }
 }
 
-async function sendMessage(client: Client) {
+async function sendMessage(client: Client, message: string) {
   const url = `${apiBaseUrl}/evoRoutes/sendMessage`;
   console.log(client);
 
   const body = {
     botName: botName,
-    number: phoneTest,
-    textMessage: "Olá! Esta é uma mensagem de teste pela aplicação!",
+    number: "55" + client.phone,
+    textMessage: message,
   };
   const headers = {
     "Content-Type": "application/json",
@@ -137,14 +178,24 @@ const ClientList = () => {
 
   const handleSendMessage = async (client: Client) => {
     try {
+      console.log(client);
+      const templateMessage01 = `Olá *${getFirstName(
+        client.fullname
+      )}*, somos a equipe da *SortudoPix*!\nViemos informar, caso você não nos acompanhe no Instagram, viemos te informar que nosso sistema de vendas sofreu um ataque cibernético, que causou danos irreversíveis ao sistema de cotas, por causa do ataque o sistema perdeu os números que cada cliente comprou, tornando impossível a continuidade da campanha, a empresa que administra o nosso sistema só conseguiu recuperar os dados cadastrais dos clientes e a quantidade que cada um comprou, assim possibilitando pelomenos que nós consigamos estornar o pagamento de cada cliente, desde já pedimos desculpas e compreensão. Nós arcaremos com todos os prejuízos e estamos entrando em contato para fazer a sua devolução.`;
+
+      const templateMessage02 = `${calcularRestituicao(
+        client
+      )}\nPor favor me confirme os 3 primeiros números do CPF usado para comprar as cotas e uma chave PIX para receber seu estorno.`;
+
+      console.log(templateMessage01);
+      console.log(templateMessage02);
       toast.loading("Enviando mensagem...");
 
-      // Simulação de envio de mensagem e tempo de resposta
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
-      await sendMessage(client);
+      await sendMessage(client, templateMessage01);
+      await delay(1000);
+      await sendMessage(client, templateMessage02);
       await updateClientStatus(client, "refunded");
 
-      // Simulação de uma resposta positiva
       toast.dismiss();
       toast.success("Mensagem enviada com sucesso!");
 
