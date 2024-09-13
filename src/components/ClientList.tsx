@@ -15,12 +15,14 @@ function getFirstName(fullName: string) {
 }
 
 function calcularRestituicao(client: Client) {
-  const totalAmount = parseFloat(client.total_amount).toLocaleString("pt-BR", {
+  const totalAmount = Number(
+    +client.total_amount + Number(client.discount_amount ?? 0)
+  ).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
 
-  const finalAmount = parseFloat(client.final_amount).toLocaleString("pt-BR", {
+  const finalAmount = parseFloat(client.total_amount).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
   });
@@ -275,11 +277,15 @@ const ClientList = () => {
               <td className="px-4 py-2 border-b">{client.phone}</td>
               <td className="px-4 py-2 border-b">{client.cpf || "N/A"}</td>
               <td className="px-4 py-2 border-b">{client.quantity}</td>
-              <td className="px-4 py-2 border-b">{client.total_amount}</td>
+              <td className="px-4 py-2 border-b">
+                {Number(
+                  +client.total_amount + Number(client.discount_amount ?? 0)
+                ).toFixed(2)}
+              </td>
               <td className="px-4 py-2 border-b">
                 {client.discount_amount || "N/A"}
               </td>
-              <td className="px-4 py-2 border-b">{client.final_amount}</td>
+              <td className="px-4 py-2 border-b">{client.total_amount}</td>
               <td
                 className={`px-4 py-2 border-b ${
                   client.status === "paid"
@@ -295,11 +301,15 @@ const ClientList = () => {
                 <button
                   onClick={() => handleSendMessage(client)}
                   className={`px-2 py-1 rounded text-white ${
-                    client.status === "refunded"
+                    client.status === "refunded" ||
+                    client.status === "cancelled"
                       ? "bg-gray-500 cursor-not-allowed"
                       : "bg-blue-500"
                   }`}
-                  disabled={client.status === "refunded"}
+                  disabled={
+                    client.status === "refunded" ||
+                    client.status === "cancelled"
+                  }
                 >
                   {client.status === "refunded" ? "Enviado" : "Enviar"}
                 </button>
