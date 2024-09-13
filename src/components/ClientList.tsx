@@ -192,7 +192,7 @@ const ClientList = () => {
       toast.loading("Enviando mensagem...");
 
       await sendMessage(client, templateMessage01);
-      await delay(5000);
+      await delay(10000);
       await sendMessage(client, templateMessage02);
       await updateClientStatus(client, "refunded");
 
