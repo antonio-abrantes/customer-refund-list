@@ -33,16 +33,12 @@ function calcularRestituicao(client: Client) {
         currency: "BRL",
       })
     : null;
-  const quantity = client.quantity;
+  // const quantity = client.quantity;
 
   if (discountAmount) {
-    return `Valor a restituir: *${finalAmount}*, na sua compra você obteve um desconto de *${discountAmount}* referente a compra de *${quantity}* ${
-      quantity > 1 ? "cotas" : "cota"
-    }.`;
+    return `Pedimos para que verifique se o valor: *${finalAmount}*`;
   } else {
-    return `Valor a restituir: *${totalAmount}*, referente a compra de *${quantity}* ${
-      quantity > 1 ? "cotas" : "cota"
-    }.`;
+    return `Pedimos para que verifique se o valor: *${totalAmount}*`;
   }
 }
 
@@ -130,8 +126,10 @@ async function sendMessage(client: Client, message: string) {
 
     const data = await response.json();
     console.log("Resposta da API:", data);
+    return true;
   } catch (error) {
     console.error("Erro ao enviar a mensagem:", error);
+    throw error;
   }
 }
 
@@ -183,21 +181,25 @@ const ClientList = () => {
       console.log(client);
       const templateMessage01 = `Olá *${getFirstName(
         client.fullname
-      )}*, somos a equipe da *SortudoPix*!\nViemos informar, caso você não nos acompanhe no Instagram, viemos te informar que nosso sistema de vendas sofreu um ataque cibernético, que causou danos irreversíveis ao sistema de cotas, por causa do ataque o sistema perdeu os números que cada cliente comprou, tornando impossível a continuidade da campanha, a empresa que administra o nosso sistema só conseguiu recuperar os dados cadastrais dos clientes e a quantidade que cada um comprou, assim possibilitando pelomenos que nós consigamos estornar o pagamento de cada cliente, desde já pedimos desculpas e compreensão. Nós arcaremos com todos os prejuízos e estamos entrando em contato para fazer a sua devolução.`;
+      )}*, somos da da equipe *SortudoPix*, referente ao sorteio de uma *Honda Broz 160cc* que você estava participando... A empresa que gerenciava a rifa teve um problama em seu sistema devido a um ataque cibernético, e corrompeu os dados, fazendo com que nós perdessemos o controle sobre as cotas vendidas, assim impossibilitando a realização do sorteio que seria no próximo dia 21... Estamos então entrando em contato para avisar que vamos estornar os pagamentos de todos os clientes.`;
 
       const templateMessage02 = `${calcularRestituicao(
         client
-      )}\nPor favor me confirme os 3 primeiros números do CPF usado para comprar as cotas e uma chave PIX para receber seu estorno.`;
+      )} já foi estornado para sua conta. Nosso pix de estorno é no nome de *VANESSA DANTAS RODRIGUES*.`;
 
       console.log(templateMessage01);
       console.log(templateMessage02);
       toast.loading("Enviando mensagem...");
 
-      await sendMessage(client, templateMessage01);
+      const resMessage01 = await sendMessage(client, templateMessage01);
       await delay(10000);
-      await sendMessage(client, templateMessage02);
-      await updateClientStatus(client, "refunded");
+      const resMessage02 = await sendMessage(client, templateMessage02);
 
+      if (!resMessage01 || !resMessage02) {
+        throw new Error("Falha ao enviar mensagens.");
+      }
+
+      await updateClientStatus(client, "refunded");
       toast.dismiss();
       toast.success("Mensagem enviada com sucesso!");
 
@@ -208,9 +210,10 @@ const ClientList = () => {
         )
       );
     } catch (error) {
-      toast.dismiss();
       toast.error("Erro ao enviar a mensagem.");
       console.log(error);
+    } finally {
+      toast.dismiss();
     }
   };
 
