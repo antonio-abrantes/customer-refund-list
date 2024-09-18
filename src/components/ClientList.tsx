@@ -187,15 +187,19 @@ const ClientList = () => {
         client
       )} já foi estornado para sua conta. Nosso pix de estorno é no nome de *VANESSA DANTAS RODRIGUES*.`;
 
-      console.log(templateMessage01);
-      console.log(templateMessage02);
+      // console.log(templateMessage01);
+      // console.log(templateMessage02);
+
+      const mergeMessages = `${templateMessage01}\n${templateMessage02}`;
       toast.loading("Enviando mensagem...");
 
-      const resMessage01 = await sendMessage(client, templateMessage01);
-      await delay(10000);
-      const resMessage02 = await sendMessage(client, templateMessage02);
+      console.log(mergeMessages);
 
-      if (!resMessage01 || !resMessage02) {
+      const resMessage01 = await sendMessage(client, mergeMessages);
+      await delay(5000);
+      //const resMessage02 = await sendMessage(client, templateMessage02);
+
+      if (!resMessage01) {
         throw new Error("Falha ao enviar mensagens.");
       }
 
@@ -230,6 +234,22 @@ const ClientList = () => {
       default:
         return "Desconhecido";
     }
+  };
+
+  const sendMessageWeb = (client: Client) => {
+    const templateMessage01 = `Olá *${getFirstName(
+      client.fullname
+    )}*, somos da da equipe *SortudoPix*, referente ao sorteio de uma *Honda Broz 160cc* que você estava participando... A empresa que gerenciava a rifa teve um problama em seu sistema devido a um ataque cibernético, e corrompeu os dados, fazendo com que nós perdessemos o controle sobre as cotas vendidas, assim impossibilitando a realização do sorteio que seria no próximo dia 21... Estamos então entrando em contato para avisar que vamos estornar os pagamentos de todos os clientes.`;
+
+    const templateMessage02 = `${calcularRestituicao(
+      client
+    )} já foi estornado para sua conta. Nosso pix de estorno é no nome de *VANESSA DANTAS RODRIGUES*.`;
+
+    const mergeMessages = `${templateMessage01}\n${templateMessage02}`;
+
+    const link = `https://wa.me/55${client.phone}?text=${mergeMessages}`;
+
+    window.open(link, "_blank");
   };
 
   return (
@@ -271,6 +291,7 @@ const ClientList = () => {
             <th className="px-4 py-2 border-b">Valor Final</th>
             <th className="px-4 py-2 border-b">Status</th>
             <th className="px-4 py-2 border-b">Ações</th>
+            <th className="px-4 py-2 border-b">Web</th> {/* Nova coluna */}
           </tr>
         </thead>
         <tbody>
@@ -315,6 +336,15 @@ const ClientList = () => {
                   }
                 >
                   {client.status === "refunded" ? "Enviado" : "Enviar"}
+                </button>
+              </td>
+              {/* Nova célula com o botão Web */}
+              <td className="px-2 py-2 border-b">
+                <button
+                  onClick={() => sendMessageWeb(client)}
+                  className="bg-green-500 text-white text-sm border border-white rounded-full px-2 py-2 hover:bg-green-600 transition duration-300"
+                >
+                  Web
                 </button>
               </td>
             </tr>
